@@ -5,12 +5,18 @@ if([ -h "${VIMSTACK}" ]); then while([ -h "${VIMSTACK}" ]) do VIMSTACK=`readlink
 pushd . > /dev/null; cd `dirname ${VIMSTACK}` > /dev/null; VIMSTACK=`pwd`; popd  > /dev/null
 
 # Link up vimrc
-ln -sf "$VIMSTACK/vimrc.vim" "$HOME/.vimrc"
+ln -sf $VIMSTACK/vimrc.vim $HOME/.vimrc
 
-mkdir -p "$HOME/.vim/bundle"
-mkdir -p "$HOME/.vim/local/bundle"
-mkdir -p "$HOME/.vim/stack/simple/bundle"
+# Link up pathogen
+ln -sf $VIMSTACK/lib/pathogen.vim $HOME/.vim/autoload/pathogen.vim
+
+mkdir -p $HOME/.vim/{autoload,bundle}
+mkdir -p $HOME/.vim/local/{bundle,.bundle}
+mkdir -p $HOME/.vim/stack/simple/{bundle,.bundle}
 
 # Set something current
-rm -f "$HOME/.vim/current"
-ln -sf "$HOME/.vim/stack/simple" "$HOME/.vim/current"
+rm -f $HOME/.vim/current
+ln -sf $HOME/.vim/stack/simple $HOME/.vim/current
+
+# Prolly too soon for this and I will change it later, but I'm lazy
+ln -sf $VIMSTACK/update.sh /usr/local/bin/vimstack-update
