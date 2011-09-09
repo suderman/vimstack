@@ -3,9 +3,9 @@ runtime! autoload/pathogen.vim
 let &rtp = substitute(&rtp, $HOME."/.vim", $HOME."/.vim_disabled", "g")
 
 " Load the inherited, current and local stack
-call pathogen#infect($HOME.'/.vim/current/.inherited/bundle')
-call pathogen#infect($HOME.'/.vim/current/bundle')
-call pathogen#infect($HOME.'/.vim/local/bundle')
+call pathogen#infect($HOME.'/.vim/current/.inherited/.bundle')
+call pathogen#infect($HOME.'/.vim/current/.bundle')
+call pathogen#infect($HOME.'/.vim/local/.bundle')
 syntax on
 filetype plugin indent on
 
@@ -34,3 +34,4 @@ call s:Source($HOME.'/.vim/current/bundle/*.vim')
 call s:Source($HOME.'/.vim/local/vimrc.vim')
 call s:Source($HOME.'/.vim/local/*.vim')
 call s:Source($HOME.'/.vim/local/bundle/*.vim')
+
