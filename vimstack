@@ -1,0 +1,147 @@
+#!/usr/bin/env ruby
+
+require "rubygems"
+require "thor"
+require 'pathname'
+require 'fileutils'
+include FileUtils
+
+APP    = File.dirname(Pathname.new(__FILE__).realpath)
+HOME   = File.expand_path('~')
+DOTVIM = File.expand_path('~/.vim')
+STACK  = File.exists?("#{DOTVIM}/current") ? Pathname.new("#{DOTVIM}/current").realpath : ""
+
+class Vimstack < Thor
+
+  desc "example FILE", "an example task"
+  method_option :delete, :aliases => "-d", :desc => "Delete the file after parsing it"
+
+  def example(file)
+
+    puts "You supplied the file: #{file}"
+    delete_file = options[:delete]
+    if delete_file
+      puts "You specified that you would like to delete #{file}"
+    else
+      puts "You do not want to delete #{file}"
+    end
+  end
+
+
+  desc "install", "install vimstack"
+  def install
+
+    # Back up existing vim
+    cp "#{HOME}/.vimrc", "#{HOME}/.vimrc-pre-vimstack"
+    cp "#{HOME}/.gvimrc", "#{HOME}/.gvimrc-pre-vimstack"
+    cp_r "#{HOME}/.vim", "#{HOME}/.vim-pre-vimstack"
+
+    # Link up vimrc
+    ln_sf "#{APP}/vimrc.vim", "#{HOME}/.vimrc"
+
+    # Build new .vim
+    rm_rf DOTVIM
+    mkdir_p "#{DOTVIM}/autoload"
+    mkdir_p "#{DOTVIM}/bundle"
+    mkdir_p "#{DOTVIM}/local/bundle"
+    mkdir_p "#{DOTVIM}/local/.bundle"
+    mkdir_p "#{DOTVIM}/stack/simple/bundle"
+    mkdir_p "#{DOTVIM}/stack/simple/.bundle"
+
+    # Link up pathogen
+    ln_sf "#{APP}/lib/pathogen.vim", "#{DOTVIM}/autoload/pathogen.vim"
+
+    # Set something current
+    rm_f "#{DOTVIM}/current"
+    ln_sf "#{DOTVIM}/stack/simple", "#{DOTVIM}/current"
+
+    # Make vimstack available everywhere
+    ln_sf "#{APP}/vimstack", "/usr/local/bin/vimstack"
+  end
+
+
+
+  desc "update", "update vimstack"
+  def update
+
+    # Empty and recreate the stack's bundle dir
+    rm_rf "#{STACK}/.bundle"
+    mkdir_p "#{STACK}/.bundle"
+    mkdir_p "#{STACK}/bundle"
+    mkdir_p "#{DOTVIM}/bundle"
+
+    # Find all *.vim files in stack
+    files = Dir["#{STACK}/**/*"].reject {|fn| File.directory?(fn) or !fn.match(/\.vim$/) }
+    lines = []
+
+    # Look at each line in each file
+    files.each do |file|
+      File.foreach file do |line|
+        lines << line if line.upcase.match 'BUNDLE:|BUNDLE-COMMAND:'
+      end
+    end
+
+    bundle_name = ""
+    bundle_url = ""
+    bundle_path = ""
+    bundle_command = ""
+
+    # Process each line
+    lines.each do |line|
+
+      # Attempt a bundle command
+      if line.upcase.match 'BUNDLE-COMMAND:'
+        bundle_command = line.split(/BUNDLE-COMMAND:/i).last.strip
+        cd bundle_path
+        result = %x(#{bundle_command})
+        next
+      end
+
+      # Parse line for bundle info
+      bundle_url = line.split(/BUNDLE:/i).last.strip.split(/\.GIT/i).first+'.git'
+      bundle_name = bundle_url.split('://').last.gsub(':','/').split('/',2).last.gsub('/','-').split('.git').first
+      bundle_path = "#{DOTVIM}/bundle/#{bundle_name}"
+
+      # Check if the bundle already exists
+      if File.directory?(bundle_path)
+
+        # Attempt to update if it's a git repository
+        if File.directory?("#{bundle_path}/.git")
+          puts "#{bundle_name} found. Updating..."
+          cd bundle_path
+          result = %x(git pull)
+          puts result
+
+        # Just a regular directory
+        else
+          puts "#{bundle_name} found."
+        end
+
+      # If it's new, clone the repository
+      else
+        puts "#{bundle_name} is new! Installing..."
+        result = %x(git clone #{bundle_url} #{bundle_path})
+      end
+
+      # Symlink the bundle into the stack's bundle dir
+      ln_sf bundle_path, "#{STACK}/.bundle/#{bundle_name}"
+
+    end
+  end
+
+  desc "use STACK", "switch to a different stack"
+  def use(stack)
+    if File.directory?("#{DOTVIM}/stack/#{stack}")
+      rm_f "#{DOTVIM}/current"
+      ln_sf "#{DOTVIM}/stack/#{stack}", "#{DOTVIM}/current"
+      puts "Using #{DOTVIM}/stack/#{stack}"
+    else
+      puts "Stack \"#{stack}\" not found!"
+      puts "Using #{STACK}"
+    end
+  end
+
+end
+
+
+Vimstack.start
