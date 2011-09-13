@@ -12,6 +12,7 @@ DOTVIM = File.expand_path('~/.vim')
 STACK  = File.exists?("#{DOTVIM}/current") ? Pathname.new("#{DOTVIM}/current").realpath : ""
 
 class Vimstack < Thor
+  #include Thor::Actions
 
   desc "example FILE", "an example task"
   method_option :delete, :aliases => "-d", :desc => "Delete the file after parsing it"
@@ -129,6 +130,8 @@ class Vimstack < Thor
     end
   end
 
+
+
   desc "use STACK", "switch to a different stack"
   def use(stack)
     if File.directory?("#{DOTVIM}/stack/#{stack}")
@@ -138,6 +141,23 @@ class Vimstack < Thor
     else
       puts "Stack \"#{stack}\" not found!"
       puts "Using #{STACK}"
+    end
+  end
+
+
+  desc "list", "list all stacks"
+  method_options :alias => :string
+  def list
+
+    cd "#{DOTVIM}/stack"
+    stacks = Dir["*"].find_all {|fn| File.directory?(fn) }
+
+    stacks.each do |stack|
+      if stack == STACK.split().last.to_s
+        say "#{shell.set_color("=>", :green, true)} #{stack}"
+      else
+        say "   #{stack}"
+      end
     end
   end
 

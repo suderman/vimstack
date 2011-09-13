@@ -5,6 +5,7 @@ let &rtp = substitute(&rtp, $HOME."/.vim", $HOME."/.vim_disabled", "g")
 " Load the inherited, current and local stack
 call pathogen#infect($HOME.'/.vim/current/.inherited/.bundle')
 call pathogen#infect($HOME.'/.vim/current/.bundle')
+call pathogen#infect($HOME.'/.vim/current/bundle')
 call pathogen#infect($HOME.'/.vim/local/.bundle')
 syntax on
 filetype plugin indent on
