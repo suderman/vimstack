@@ -29,8 +29,8 @@ class Vimstack < Thor
   end
 
 
-  desc "install", "install vimstack"
-  def install
+  desc "init", "install vimstack"
+  def init
 
     # Back up existing vim
     cp "#{HOME}/.vimrc", "#{HOME}/.vimrc-pre-vimstack"
@@ -146,7 +146,6 @@ class Vimstack < Thor
 
 
   desc "list", "list all stacks"
-  method_options :alias => :string
   def list
 
     cd "#{DOTVIM}/stack"
@@ -160,6 +159,15 @@ class Vimstack < Thor
       end
     end
   end
+  
+  desc "new URL", "add new stack"
+  def new(stack_url)
+    stack_name = stack_url.split('://').last.gsub(':','/').split('/',2).last.gsub('/','-').split('.git').first.split('-').last
+    puts "Installing #{stack_name}..."
+    result = %x(git clone #{stack_url} #{DOTVIM}/stack/#{stack_name})
+    self.use(stack_name)
+    #self.update()
+  end  
 
 end
 
